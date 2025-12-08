@@ -7,8 +7,7 @@ import time
 # ---------------------------------------------------------
 st.set_page_config(page_title="NutriChef AI", page_icon="🥗")
 
-# SECURE AUTHENTICATION
-# This looks for the token in Streamlit Cloud Settings
+# SECURE AUTHENTICATION (Cloud Secrets)
 try:
     HF_TOKEN = st.secrets["HF_TOKEN"]
 except:
@@ -23,18 +22,22 @@ REPO_ID = "Qwen/Qwen2.5-7B-Instruct"
 # ---------------------------------------------------------
 # 2. HELPER FUNCTIONS
 # ---------------------------------------------------------
-def get_recipe(ingredients, spiciness_level):
+def get_recipe(ingredients, spiciness_level, dietary_goals):
+    # Convert list of goals to string
+    goals_str = ", ".join(dietary_goals) if dietary_goals else "None"
+
     system_prompt = f"""
-    You are NutriChef AI, a resourceful home cook.
-    1. Create a recipe using ONLY the selected ingredients.
-    2. Spiciness Level: {spiciness_level}. Adjust spices/chilies accordingly.
-    3. You may assume the user has basic pantry staples (Salt, Oil, Water).
-    4. START the response with the Recipe Name as a # Header.
-    5. Create a Markdown Table for estimated nutrition.
+    You are NutriChef AI, a smart nutritionist and chef.
+    1. Create a recipe using ONLY the selected ingredients (plus salt, oil, water).
+    2. Spiciness Level: {spiciness_level}.
+    3. DIETARY GOALS: {goals_str}. IMPORTANT: Adjust the recipe to meet these goals 
+       (e.g., if 'Diabetic-Friendly', avoid sugar/high carbs; if 'Kid-Friendly', make it mild and fun).
+    4. START with the Recipe Name as a # Header.
+    5. Create a Markdown Table for nutrition.
     """
     
     ingredients_str = ", ".join(ingredients)
-    user_prompt = f"I have these ingredients: {ingredients_str}. Make me a {spiciness_level} meal."
+    user_prompt = f"Ingredients: {ingredients_str}. Goals: {goals_str}. Spiciness: {spiciness_level}."
 
     for attempt in range(3):
         try:
@@ -56,17 +59,28 @@ def get_recipe(ingredients, spiciness_level):
 # 3. WEB UI
 # ---------------------------------------------------------
 st.title("🥗 NutriChef AI")
-st.markdown("Select your ingredients & spice level:")
+st.markdown("Customize your meal exactly how you want it!")
 
-# 🌶️ SPICINESS SLIDER
-spiciness = st.select_slider(
-    "How spicy do you want it?",
-    options=["Mild", "Medium", "Spicy", "Fire 🌶️"]
-)
+# --- 🎯 NEW: DIETARY GOALS ---
+col_opt1, col_opt2 = st.columns(2)
+
+with col_opt1:
+    spiciness = st.select_slider(
+        "🌶️ Spiciness Level",
+        options=["Mild", "Medium", "Spicy", "Fire"]
+    )
+
+with col_opt2:
+    dietary_goals = st.multiselect(
+        "🎯 Dietary Goals",
+        options=["High Protein", "Low Calorie", "Diabetic-Friendly", "Kid-Friendly", "Keto", "Low Carb"],
+        default=[]
+    )
 
 st.markdown("---")
+st.markdown("##### 🛒 Select Ingredients")
 
-# SIMPLE INVENTORY
+# INVENTORY LIST
 fridge_inventory = [
     "Eggs", "Bread", "Milk",                    
     "Rice", "Lentils (Dal)", "Wheat Flour",     
@@ -96,8 +110,14 @@ st.markdown("---")
 # ---------------------------------------------------------
 if st.button("Generate Recipe 🥘"):
     if len(selected_items) > 0:
-        with st.spinner(f'Chef is cooking something {spiciness}...'):
-            recipe_result = get_recipe(selected_items, spiciness)
+        # Create a friendly status message
+        status_msg = f'Cooking a {spiciness} meal'
+        if dietary_goals:
+            status_msg += f' that is {", ".join(dietary_goals)}'
+        
+        with st.spinner(f'{status_msg}...'):
+            # Pass all inputs to the function
+            recipe_result = get_recipe(selected_items, spiciness, dietary_goals)
             
             st.markdown("### 🍽️ Your Recipe Card")
             
