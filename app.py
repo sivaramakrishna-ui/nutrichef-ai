@@ -7,48 +7,40 @@ import time
 # ---------------------------------------------------------
 st.set_page_config(page_title="NutriChef AI", page_icon="🥗")
 
-# 🔴 STEP 1: DEFINE THE TOKEN
-# This logic handles both Cloud (Secrets) and Local (Hardcoded) modes
+# Hybrid Auth: Checks Cloud Secrets first, then local code
 if "HF_TOKEN" in st.secrets:
-    # Use the secret key if running on Streamlit Cloud
     hf_token = st.secrets["HF_TOKEN"]
 else:
-    # Use this backup key if running locally on your laptop
-    # REPLACE THIS WITH YOUR ACTUAL TOKEN for local testing
+    # 🔴 PASTE YOUR TOKEN HERE FOR LOCAL TESTING
     hf_token = "hf_..." 
 
-# 🔴 STEP 2: INITIALIZE THE CLIENT (This was missing!)
-# This creates the connection to the AI
 if hf_token.startswith("hf_"):
     client = InferenceClient(token=hf_token)
 else:
-    # If the token is missing/invalid, stop the app nicely
     st.error("⚠️ Hugging Face Token not found.")
-    st.info("If running locally: Paste your token in line 18 of app.py.")
-    st.info("If running on Cloud: Add HF_TOKEN to Streamlit Secrets.")
     st.stop()
 
-# Select the Model
 REPO_ID = "Qwen/Qwen2.5-7B-Instruct"
 
 # ---------------------------------------------------------
 # 2. HELPER FUNCTIONS
 # ---------------------------------------------------------
 def get_recipe(ingredients):
+    # --- UPDATED PROMPT: STRICT MODE ---
     system_prompt = """
-    You are NutriChef AI.
-    1. Create a simple, comforting recipe using the selected ingredients.
-    2. START the response with the Recipe Name formatted as a top-level Markdown Header (use #).
-    3. Provide step-by-step cooking instructions.
-    4. Create a Markdown Table for estimated nutrition.
+    You are a resourceful home cook.
+    1. Create a recipe using ONLY the selected ingredients.
+    2. You may assume the user has basic pantry staples (Salt, Pepper, Oil, Water, Sugar) - but NOTHING else.
+    3. Do NOT add extra vegetables, meats, or spices that are not in the list.
+    4. START the response with the Recipe Name as a # Header.
+    5. Create a Markdown Table for nutrition.
     """
     
     ingredients_str = ", ".join(ingredients)
-    user_prompt = f"I have these ingredients: {ingredients_str}. Make me a simple home-cooked meal."
+    user_prompt = f"I have these ingredients: {ingredients_str}. Make me a simple meal using ONLY these."
 
     for attempt in range(3):
         try:
-            # We use the 'client' variable here. It must be defined above!
             response = client.chat_completion(
                 model=REPO_ID,
                 messages=[
@@ -56,7 +48,7 @@ def get_recipe(ingredients):
                     {"role": "user", "content": user_prompt}
                 ],
                 max_tokens=1000,
-                temperature=0.7
+                temperature=0.5 # Lower temperature = Less creativity/randomness
             )
             return response.choices[0].message.content
         except Exception as e:
@@ -69,9 +61,11 @@ def get_recipe(ingredients):
 # 3. STREAMLIT UI
 # ---------------------------------------------------------
 st.title("🥗 NutriChef AI")
-st.markdown("Select your ingredients, and I'll generate a recipe card for you.")
+st.caption("Strict Mode: I will only cook with what you have.")
 
-# INVENTORY
+st.markdown("Select your ingredients:")
+
+# SIMPLE HOME INVENTORY
 fridge_inventory = [
     "Eggs", "Bread", "Milk",                    
     "Rice", "Lentils (Dal)", "Wheat Flour",     
