@@ -5,7 +5,9 @@ import time
 # ---------------------------------------------------------
 # 1. WEB CONFIGURATION
 # ---------------------------------------------------------
-st.set_page_config(page_title="NutriChef AI", page_icon="🥗")
+# 🎨 CHANGE 1: Set the Browser Tab Icon to your image file
+# Note: On the web, this file must be in your GitHub repo!
+st.set_page_config(page_title="NutriChef AI", page_icon="icon.png")
 
 # SECURE AUTHENTICATION (Cloud Secrets)
 try:
@@ -23,17 +25,15 @@ REPO_ID = "Qwen/Qwen2.5-7B-Instruct"
 # 2. HELPER FUNCTIONS
 # ---------------------------------------------------------
 def get_recipe(ingredients, spiciness_level, dietary_goals):
-    # Convert list of goals to string
     goals_str = ", ".join(dietary_goals) if dietary_goals else "None"
-
+    
     system_prompt = f"""
-    You are NutriChef AI, a smart nutritionist and chef.
-    1. Create a recipe using ONLY the selected ingredients (plus salt, oil, water).
+    You are NutriChef AI.
+    1. Create a recipe using ONLY the selected ingredients.
     2. Spiciness Level: {spiciness_level}.
-    3. DIETARY GOALS: {goals_str}. IMPORTANT: Adjust the recipe to meet these goals 
-       (e.g., if 'Diabetic-Friendly', avoid sugar/high carbs; if 'Kid-Friendly', make it mild and fun).
+    3. DIETARY GOALS: {goals_str}.
     4. START with the Recipe Name as a # Header.
-    5. Create a Markdown Table for nutrition.
+    5. Create a Markdown Table for estimated nutrition.
     """
     
     ingredients_str = ", ".join(ingredients)
@@ -56,12 +56,24 @@ def get_recipe(ingredients, spiciness_level, dietary_goals):
             time.sleep(2)
 
 # ---------------------------------------------------------
-# 3. WEB UI
+# 3. STREAMLIT UI (Web Interface)
 # ---------------------------------------------------------
-st.title("🥗 NutriChef AI")
-st.markdown("Customize your meal exactly how you want it!")
 
-# --- 🎯 NEW: DIETARY GOALS ---
+# 🎨 CHANGE 2: Display the logo at the top
+col_logo, col_title = st.columns([1, 4])
+
+with col_logo:
+    # Try to load the image. If it's missing from GitHub, show a warning.
+    try:
+        st.image("icon.png", width=100)
+    except:
+        st.warning("⚠️ Upload icon.png to GitHub")
+
+with col_title:
+    st.title("NutriChef AI")
+    st.markdown("Your Personal AI Kitchen Assistant")
+
+# --- 🎯 CONTROLS SECTION ---
 col_opt1, col_opt2 = st.columns(2)
 
 with col_opt1:
@@ -73,14 +85,14 @@ with col_opt1:
 with col_opt2:
     dietary_goals = st.multiselect(
         "🎯 Dietary Goals",
-        options=["High Protein", "Low Calorie", "Diabetic-Friendly", "Kid-Friendly", "Keto", "Low Carb"],
+        options=["High Protein", "Low Calorie", "Diabetic-Friendly", "Kid-Friendly", "Keto"],
         default=[]
     )
 
 st.markdown("---")
 st.markdown("##### 🛒 Select Ingredients")
 
-# INVENTORY LIST
+# Simple Home Inventory List
 fridge_inventory = [
     "Eggs", "Bread", "Milk",                    
     "Rice", "Lentils (Dal)", "Wheat Flour",     
@@ -110,13 +122,10 @@ st.markdown("---")
 # ---------------------------------------------------------
 if st.button("Generate Recipe 🥘"):
     if len(selected_items) > 0:
-        # Create a friendly status message
         status_msg = f'Cooking a {spiciness} meal'
-        if dietary_goals:
-            status_msg += f' that is {", ".join(dietary_goals)}'
+        if dietary_goals: status_msg += f' that is {", ".join(dietary_goals)}'
         
         with st.spinner(f'{status_msg}...'):
-            # Pass all inputs to the function
             recipe_result = get_recipe(selected_items, spiciness, dietary_goals)
             
             st.markdown("### 🍽️ Your Recipe Card")
@@ -124,7 +133,6 @@ if st.button("Generate Recipe 🥘"):
             with st.container(border=True):
                 st.markdown(recipe_result)
             
-            # Mobile Friendly Download
             st.download_button(
                 label="📥 Download Recipe (.txt)",
                 data=recipe_result,
