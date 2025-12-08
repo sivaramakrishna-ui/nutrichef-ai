@@ -3,41 +3,36 @@ from huggingface_hub import InferenceClient
 import time
 
 # ---------------------------------------------------------
-# 1. CONFIGURATION & AUTHENTICATION
+# 1. WEB CONFIGURATION
 # ---------------------------------------------------------
 st.set_page_config(page_title="NutriChef AI", page_icon="🥗")
 
-# Hybrid Auth: Checks Cloud Secrets first, then local code
-if "HF_TOKEN" in st.secrets:
-    hf_token = st.secrets["HF_TOKEN"]
-else:
-    # 🔴 PASTE YOUR TOKEN HERE FOR LOCAL TESTING
-    hf_token = "hf_..." 
-
-if hf_token.startswith("hf_"):
-    client = InferenceClient(token=hf_token)
-else:
-    st.error("⚠️ Hugging Face Token not found.")
+# This looks for the token in the secure cloud settings
+# If it's missing, it stops the app to protect you
+try:
+    HF_TOKEN = st.secrets["HF_TOKEN"]
+except:
+    st.error("⚠️ Token not found in Secrets!")
+    st.info("Go to Streamlit Cloud -> App Settings -> Secrets and add your HF_TOKEN.")
     st.stop()
 
+client = InferenceClient(token=HF_TOKEN)
 REPO_ID = "Qwen/Qwen2.5-7B-Instruct"
 
 # ---------------------------------------------------------
 # 2. HELPER FUNCTIONS
 # ---------------------------------------------------------
 def get_recipe(ingredients):
-    # --- UPDATED PROMPT: STRICT MODE ---
     system_prompt = """
-    You are a resourceful home cook.
+    You are NutriChef AI, a resourceful home cook.
     1. Create a recipe using ONLY the selected ingredients.
-    2. You may assume the user has basic pantry staples (Salt, Pepper, Oil, Water, Sugar) - but NOTHING else.
-    3. Do NOT add extra vegetables, meats, or spices that are not in the list.
-    4. START the response with the Recipe Name as a # Header.
-    5. Create a Markdown Table for nutrition.
+    2. Assume basic pantry staples (Salt, Oil, Water) exist.
+    3. START the response with the Recipe Name as a # Header.
+    4. Create a Markdown Table for nutrition.
     """
     
     ingredients_str = ", ".join(ingredients)
-    user_prompt = f"I have these ingredients: {ingredients_str}. Make me a simple meal using ONLY these."
+    user_prompt = f"I have these ingredients: {ingredients_str}. Make me a simple meal."
 
     for attempt in range(3):
         try:
@@ -48,29 +43,22 @@ def get_recipe(ingredients):
                     {"role": "user", "content": user_prompt}
                 ],
                 max_tokens=1000,
-                temperature=0.5 # Lower temperature = Less creativity/randomness
+                temperature=0.5
             )
             return response.choices[0].message.content
         except Exception as e:
-            if attempt == 2: 
-                return (f"⚠️ **Error:** {e}\n\n"
-                        f"**Troubleshooting:** Check your HF_TOKEN.")
+            if attempt == 2: return f"⚠️ Error: {e}"
             time.sleep(2)
 
 # ---------------------------------------------------------
-# 3. STREAMLIT UI
+# 3. WEB UI
 # ---------------------------------------------------------
 st.title("🥗 NutriChef AI")
-st.caption("Strict Mode: I will only cook with what you have.")
+st.markdown("Select your ingredients to generate a recipe!")
 
-st.markdown("Select your ingredients:")
-
-# SIMPLE HOME INVENTORY
 fridge_inventory = [
-    "Eggs", "Bread", "Milk",                    
-    "Rice", "Lentils (Dal)", "Wheat Flour",     
-    "Potatoes", "Onions", "Tomatoes",           
-    "Spinach", "Green Peas", "Carrots",         
+    "Eggs", "Bread", "Milk", "Rice", "Lentils (Dal)", "Wheat Flour",     
+    "Potatoes", "Onions", "Tomatoes", "Spinach", "Green Peas", "Carrots",         
     "Chicken", "Yogurt (Curd)", "Paneer/Cheese" 
 ]
 
@@ -90,26 +78,13 @@ for index, item in enumerate(fridge_inventory):
 
 st.markdown("---")
 
-# ---------------------------------------------------------
-# 4. GENERATION & CARD DISPLAY
-# ---------------------------------------------------------
 if st.button("Generate Recipe 🥘"):
     if len(selected_items) > 0:
-        st.info(f"Selected: {', '.join(selected_items)}")
-        
-        with st.spinner('Checking the pantry...'):
+        with st.spinner('Chef is thinking...'):
             recipe_result = get_recipe(selected_items)
-            
             st.markdown("### 🍽️ Your Recipe Card")
-            
             with st.container(border=True):
                 st.markdown(recipe_result)
-            
-            st.download_button(
-                label="📥 Download Recipe",
-                data=recipe_result,
-                file_name="NutriChef_Recipe.md",
-                mime="text/markdown"
-            )
+            st.download_button("📥 Download (.txt)", recipe_result, "Recipe.txt", "text/plain")
     else:
-        st.warning("⚠️ Please select at least one ingredient.")
+        st.warning("⚠️ Select at least one item.")
