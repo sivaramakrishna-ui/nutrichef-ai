@@ -3,25 +3,38 @@ from huggingface_hub import InferenceClient
 import time
 
 # ---------------------------------------------------------
-# 1. CONFIGURATION
+# 1. CONFIGURATION & AUTHENTICATION
 # ---------------------------------------------------------
-import streamlit as st
+st.set_page_config(page_title="NutriChef AI", page_icon="🥗")
 
-# We use st.secrets so your key stays private on the web
-# You will set this up in the Streamlit Cloud dashboard later
-try:
-    HF_TOKEN = st.secrets["HF_TOKEN"]
-except:
-    st.error("Secrets not found. Please set HF_TOKEN in Streamlit Cloud settings.")
+# 🔴 STEP 1: DEFINE THE TOKEN
+# This logic handles both Cloud (Secrets) and Local (Hardcoded) modes
+if "HF_TOKEN" in st.secrets:
+    # Use the secret key if running on Streamlit Cloud
+    hf_token = st.secrets["HF_TOKEN"]
+else:
+    # Use this backup key if running locally on your laptop
+    # REPLACE THIS WITH YOUR ACTUAL TOKEN for local testing
+    hf_token = "hf_..." 
+
+# 🔴 STEP 2: INITIALIZE THE CLIENT (This was missing!)
+# This creates the connection to the AI
+if hf_token.startswith("hf_"):
+    client = InferenceClient(token=hf_token)
+else:
+    # If the token is missing/invalid, stop the app nicely
+    st.error("⚠️ Hugging Face Token not found.")
+    st.info("If running locally: Paste your token in line 18 of app.py.")
+    st.info("If running on Cloud: Add HF_TOKEN to Streamlit Secrets.")
     st.stop()
 
-# ... rest of the code remains the same ...
+# Select the Model
+REPO_ID = "Qwen/Qwen2.5-7B-Instruct"
 
 # ---------------------------------------------------------
 # 2. HELPER FUNCTIONS
 # ---------------------------------------------------------
 def get_recipe(ingredients):
-    # Updated prompt to ensure the Title is huge (#)
     system_prompt = """
     You are NutriChef AI.
     1. Create a simple, comforting recipe using the selected ingredients.
@@ -35,6 +48,7 @@ def get_recipe(ingredients):
 
     for attempt in range(3):
         try:
+            # We use the 'client' variable here. It must be defined above!
             response = client.chat_completion(
                 model=REPO_ID,
                 messages=[
@@ -48,18 +62,16 @@ def get_recipe(ingredients):
         except Exception as e:
             if attempt == 2: 
                 return (f"⚠️ **Error:** {e}\n\n"
-                        f"**Troubleshooting:** Check your HF_TOKEN or try again later.")
+                        f"**Troubleshooting:** Check your HF_TOKEN.")
             time.sleep(2)
 
 # ---------------------------------------------------------
 # 3. STREAMLIT UI
 # ---------------------------------------------------------
-st.set_page_config(page_title="NutriChef AI", page_icon="🏠")
-
-st.title("🏠 NutriChef AI: Home Edition")
+st.title("🥗 NutriChef AI")
 st.markdown("Select your ingredients, and I'll generate a recipe card for you.")
 
-# SIMPLE HOME INVENTORY
+# INVENTORY
 fridge_inventory = [
     "Eggs", "Bread", "Milk",                    
     "Rice", "Lentils (Dal)", "Wheat Flour",     
@@ -96,12 +108,8 @@ if st.button("Generate Recipe 🥘"):
             
             st.markdown("### 🍽️ Your Recipe Card")
             
-            # --- VISUAL CHANGE: RECIPE TILE ---
-            # We use a container with a border to create the "Tile" look
             with st.container(border=True):
-                # The prompt ensures the first line is a big # Header
                 st.markdown(recipe_result)
-            # ----------------------------------
             
             st.download_button(
                 label="📥 Download Recipe",
