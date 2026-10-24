@@ -22,7 +22,7 @@ client = OpenAI(
 )
 
 # Using Meta's lightning-fast Llama 3 model
-REPO_ID = "openai/gpt-oss-20b"
+REPO_ID = "qwen/qwen3.8-27b"
 
 # ---------------------------------------------------------
 # 2. HELPER FUNCTIONS
