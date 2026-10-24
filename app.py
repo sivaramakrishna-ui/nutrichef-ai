@@ -1,25 +1,28 @@
 import streamlit as st
-from huggingface_hub import InferenceClient
+from openai import OpenAI
 import time
 
 # ---------------------------------------------------------
 # 1. WEB CONFIGURATION
 # ---------------------------------------------------------
-# 🎨 CHANGE 1: Set the Browser Tab Icon to your image file
-# Note: On the web, this file must be in your GitHub repo!
 st.set_page_config(page_title="NutriChef AI", page_icon="icon.png")
 
-# SECURE AUTHENTICATION (Cloud Secrets)
+# SECURE AUTHENTICATION
 try:
-    HF_TOKEN = st.secrets["HF_TOKEN"]
+    GROQ_TOKEN = st.secrets["GROQ_API_KEY"]
 except:
     st.error("⚠️ Token not found!")
-    st.info("Go to Streamlit Cloud -> App Settings -> Secrets and add: HF_TOKEN = 'hf_...'")
+    st.info("Go to Streamlit Cloud -> App Settings -> Secrets and add: GROQ_API_KEY = 'gsk_...'")
     st.stop()
 
-# Initialize Client
-client = InferenceClient(token=HF_TOKEN)
-REPO_ID = "Qwen/Qwen3.5-9B"
+# Initialize Groq Client 
+client = OpenAI(
+    api_key=GROQ_TOKEN,
+    base_url="https://api.groq.com/openai/v1"
+)
+
+# Using Meta's lightning-fast Llama 3 model
+REPO_ID = "llama3-8b-8192"
 
 # ---------------------------------------------------------
 # 2. HELPER FUNCTIONS
@@ -41,7 +44,7 @@ def get_recipe(ingredients, spiciness_level, dietary_goals):
 
     for attempt in range(3):
         try:
-            response = client.chat_completion(
+            response = client.chat.completions.create(
                 model=REPO_ID,
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -58,12 +61,9 @@ def get_recipe(ingredients, spiciness_level, dietary_goals):
 # ---------------------------------------------------------
 # 3. STREAMLIT UI (Web Interface)
 # ---------------------------------------------------------
-
-# 🎨 CHANGE 2: Display the logo at the top
 col_logo, col_title = st.columns([1, 4])
 
 with col_logo:
-    # Try to load the image. If it's missing from GitHub, show a warning.
     try:
         st.image("icon.png", width=100)
     except:
@@ -92,7 +92,6 @@ with col_opt2:
 st.markdown("---")
 st.markdown("##### 🛒 Select Ingredients")
 
-# Simple Home Inventory List
 fridge_inventory = [
     "Eggs", "Bread", "Milk",                    
     "Rice", "Lentils (Dal)", "Wheat Flour",     
