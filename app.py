@@ -19,7 +19,7 @@ except:
 
 # Initialize Client
 client = InferenceClient(token=HF_TOKEN)
-REPO_ID = "microsoft/Phi-3-mini-4k-instruct"
+REPO_ID = "Qwen/Qwen3.5-9B"
 
 # ---------------------------------------------------------
 # 2. HELPER FUNCTIONS
