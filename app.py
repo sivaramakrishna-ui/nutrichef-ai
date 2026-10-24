@@ -19,7 +19,7 @@ except:
 
 # Initialize Client
 client = InferenceClient(token=HF_TOKEN)
-REPO_ID = "HuggingFaceH4/zephyr-7b-beta"
+REPO_ID = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 
 # ---------------------------------------------------------
 # 2. HELPER FUNCTIONS
