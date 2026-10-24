@@ -19,7 +19,7 @@ except:
 
 # Initialize Client
 client = InferenceClient(token=HF_TOKEN)
-REPO_ID = "Qwen/Qwen2.5-7B-Instruct"
+REPO_ID = "mistralai/Mistral-7B-Instruct-v0.3"
 
 # ---------------------------------------------------------
 # 2. HELPER FUNCTIONS
