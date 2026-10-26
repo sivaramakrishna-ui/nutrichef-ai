@@ -106,7 +106,7 @@ def get_recipe(ingredients, spiciness_level, dietary_goals):
 st.markdown("<h1>NutriChef AI</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Your pocket kitchen assistant</p>", unsafe_allow_html=True)
 # Center the icon (Smaller size)
-_, icon_col, _ = st.columns([3, 1, 3])
+_, icon_col, _ = st.columns([6, 1, 6])
 with icon_col:
     st.image("icon.png", use_container_width=True)
 
