@@ -70,17 +70,21 @@ REPO_ID = "qwen/qwen3.8-27b"
 # ---------------------------------------------------------
 # 2. AI GENERATION FUNCTION
 # ---------------------------------------------------------
-def get_recipe(ingredients, spiciness_level, dietary_goals):
+def get_recipe(ingredients, spiciness_level, dietary_goals, max_time):
     goals_str = ", ".join(dietary_goals) if dietary_goals else "None"
+    
+    # ⬇️ NEW: Added Max Time to the System Prompt
     system_prompt = f"""
     You are NutriChef AI.
     1. Create a recipe using ONLY the selected ingredients.
     2. Spiciness Level: {spiciness_level}.
     3. DIETARY GOALS: {goals_str}.
-    4. START with the Recipe Name as a # Header.
-    5. Create a Markdown Table for estimated nutrition.
+    4. TIME LIMIT: The total prep and cook time must be {max_time} or less.
+    5. START with the Recipe Name as a # Header.
+    6. Include the estimated Prep Time and Cook Time right under the title.
+    7. Create a Markdown Table for estimated nutrition.
     """
-    user_prompt = f"Ingredients: {','.join(ingredients)}. Goals: {goals_str}. Spiciness: {spiciness_level}."
+    user_prompt = f"Ingredients: {','.join(ingredients)}. Goals: {goals_str}. Spiciness: {spiciness_level}. Max Time: {max_time}."
 
     for attempt in range(3):
         try:
@@ -105,22 +109,31 @@ def get_recipe(ingredients, spiciness_level, dietary_goals):
 st.markdown("<h1>NutriChef AI</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Your pocket kitchen assistant</p>", unsafe_allow_html=True)
 
-# Center the icon (Smaller size)
+# Center the icon
 _, icon_col, _ = st.columns([2, 1, 2])
 with icon_col:
     try:
         st.image("icon.png", use_container_width=True)
     except:
-        pass # Silently fail if icon isn't loaded yet
+        pass 
 
 # 📱 Settings 
 with st.container(border=True):
     st.markdown("### 🎛️ Recipe Settings")
+    
+    # ⬇️ NEW: Cooking Duration Dropdown ⬇️
+    max_time = st.selectbox(
+        "⏱️ Max Cooking Time",
+        options=["15 mins ⚡", "30 mins ⏳", "45 mins 🕒", "1 hour 🍳", "Any Time 🕰️"],
+        index=1 # Defaults to 30 mins
+    )
+    
     spiciness = st.select_slider(
         "🌶️ Spiciness",
         options=["Mild", "Medium", "Spicy", "Fire"],
         value="Medium"
     )
+    
     dietary_goals = st.multiselect(
         "🎯 Dietary Goals",
         options=["High Protein", "Low Calorie", "Diabetic-Friendly", "Keto"],
@@ -137,7 +150,7 @@ with st.container(border=True):
         "Eggs 🥚", "Bread 🍞", "Milk 🥛", "Rice 🍚", "Pasta 🍝",
         "Lentils 🍲", "Beans 🫘", "Potatoes 🥔", "Onions 🧅", "Tomatoes 🍅", 
         "Spinach 🥬", "Carrots 🥕", "Bell Peppers 🫑", "Mushrooms 🍄",
-        "Chicken 🍗", "Cheese 🧀", "Butter 🧈", "Garlic 🧄"
+        "Chicken 🍗", "Beef 🥩", "Cheese 🧀", "Butter 🧈", "Garlic 🧄"
     ]
     
     selected_items = st.pills(
@@ -149,7 +162,6 @@ with st.container(border=True):
     
     st.markdown("---")
     
-    # ⬇️ NEW: Dropdown Menu for Extras ⬇️
     extra_options = [
         "Honey 🍯", "Lemon 🍋", "Lime 🍈", "Vinegar 🍾", 
         "Soy Sauce 🥢", "Cinnamon 🤎", "Vanilla Extract 🌼", 
@@ -176,8 +188,9 @@ if st.button("Cook Now! ✨"):
         final_ingredients.extend(extra_ingredients)
         
     if len(final_ingredients) > 0:
-        with st.spinner("🔥 Chef is cooking your recipe..."):
-            recipe_result = get_recipe(final_ingredients, spiciness, dietary_goals)
+        with st.spinner(f"🔥 Cooking a {max_time.split()[0]} minute recipe..."):
+            # ⬇️ NEW: Pass max_time into the get_recipe function
+            recipe_result = get_recipe(final_ingredients, spiciness, dietary_goals, max_time)
             
             if not recipe_result.startswith("⚠️ Error"):
                 st.session_state.recipe_history.insert(0, recipe_result)
