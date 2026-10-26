@@ -104,6 +104,10 @@ def get_recipe(ingredients, spiciness_level, dietary_goals):
 # App Header
 st.markdown("<h1>NutriChef AI 🥘</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Your pocket kitchen assistant</p>", unsafe_allow_html=True)
+# Center the icon
+_, icon_col, _ = st.columns([1, 2, 1])
+with icon_col:
+    st.image("icon.png", use_container_width=True)
 
 # 📱 Settings - Moved to main page inside a colorful container for mobile
 with st.container(border=True):
