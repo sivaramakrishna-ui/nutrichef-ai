@@ -101,16 +101,19 @@ def get_recipe(ingredients, spiciness_level, dietary_goals):
 # ---------------------------------------------------------
 # 3. MOBILE UI LAYOUT
 # ---------------------------------------------------------
-# App Header
 # App Header (No emoji)
 st.markdown("<h1>NutriChef AI</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Your pocket kitchen assistant</p>", unsafe_allow_html=True)
-# Center the icon (Smaller size)
-_, icon_col, _ = st.columns([6, 1, 6])
-with icon_col:
-    st.image("icon.png", use_container_width=True)
 
-# 📱 Settings - Moved to main page inside a colorful container for mobile
+# Center the icon (Smaller size)
+_, icon_col, _ = st.columns([2, 1, 2])
+with icon_col:
+    try:
+        st.image("icon.png", use_container_width=True)
+    except:
+        pass # Silently fail if icon isn't loaded yet
+
+# 📱 Settings 
 with st.container(border=True):
     st.markdown("### 🎛️ Recipe Settings")
     spiciness = st.select_slider(
@@ -126,20 +129,32 @@ with st.container(border=True):
 
 st.write("") # Spacer
 
-# 📱 Ingredients - Using pills for easy thumb-tapping
+# 📱 Ingredients 
 with st.container(border=True):
     st.markdown("### 🛒 Pantry Ingredients")
+    
+    # Expanded Inventory
     fridge_inventory = [
-        "Eggs 🥚", "Bread 🍞", "Milk 🥛", "Rice 🍚", 
-        "Lentils 🍲", "Potatoes 🥔", "Onions 🧅", "Tomatoes 🍅", 
-        "Spinach 🥬", "Carrots 🥕", "Chicken 🍗", "Cheese 🧀", 
-        "Garlic 🧄", "Olive Oil 🫒"
+        "Eggs 🥚", "Bread 🍞", "Milk 🥛", "Rice 🍚", "Pasta 🍝",
+        "Lentils 🍲", "Beans 🫘", "Potatoes 🥔", "Onions 🧅", "Tomatoes 🍅", 
+        "Spinach 🥬", "Carrots 🥕", "Bell Peppers 🫑", "Mushrooms 🍄",
+        "Chicken 🍗", "Beef 🥩", "Cheese 🧀", "Butter 🧈", 
+        "Garlic 🧄", "Ginger 🫚", "Olive Oil 🫒", "Soy Sauce 🥢"
     ]
     
     selected_items = st.pills(
         "Tap to add to pot:", 
         options=fridge_inventory, 
-        selection_mode="multi"
+        selection_mode="multi",
+        default=[]
+    )
+    
+    st.markdown("---")
+    
+    # Custom Ingredient Input
+    custom_ingredients = st.text_input(
+        "➕ Have something else?",
+        placeholder="e.g. honey, salmon, lemon... (comma separated)"
     )
 
 st.write("") # Spacer
@@ -148,9 +163,18 @@ st.write("") # Spacer
 # 4. ACTION BUTTON & RESULTS
 # ---------------------------------------------------------
 if st.button("Cook Now! ✨"):
-    if selected_items and len(selected_items) > 0:
+    
+    # Combine selected pills and typed custom ingredients
+    final_ingredients = list(selected_items) if selected_items else []
+    
+    if custom_ingredients:
+        # Split by comma and remove extra spaces
+        custom_list = [item.strip() for item in custom_ingredients.split(",") if item.strip()]
+        final_ingredients.extend(custom_list)
+        
+    if len(final_ingredients) > 0:
         with st.spinner("🔥 Chef is cooking your recipe..."):
-            recipe_result = get_recipe(selected_items, spiciness, dietary_goals)
+            recipe_result = get_recipe(final_ingredients, spiciness, dietary_goals)
             
             if not recipe_result.startswith("⚠️ Error"):
                 st.session_state.recipe_history.insert(0, recipe_result)
@@ -159,7 +183,7 @@ if st.button("Cook Now! ✨"):
             else:
                 st.error(recipe_result)
     else:
-        st.warning("⚠️ Tap at least one ingredient first!")
+        st.warning("⚠️ Tap or type at least one ingredient first!")
 
 # 📜 History displayed as mobile "Cards"
 if st.session_state.recipe_history:
@@ -167,7 +191,6 @@ if st.session_state.recipe_history:
     st.markdown("### 🍽️ Your Menu")
     
     for i, recipe in enumerate(st.session_state.recipe_history):
-        # Use success/info containers to make the recipe look like a distinct card
         with st.container(border=True):
             with st.expander(f"✨ Recipe #{len(st.session_state.recipe_history) - i}", expanded=(i == 0)):
                 st.markdown(recipe)
