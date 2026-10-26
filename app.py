@@ -5,7 +5,7 @@ import time
 # ---------------------------------------------------------
 # 1. WEB CONFIGURATION & STATE
 # ---------------------------------------------------------
-st.set_page_config(page_title="NutriChef AI", page_icon="icon.png")
+st.set_page_config(page_title="NutriChef AI", page_icon="icon.png", layout="wide")
 
 # Initialize Session State for Recipe History
 if "recipe_history" not in st.session_state:
@@ -63,92 +63,99 @@ def get_recipe(ingredients, spiciness_level, dietary_goals):
             time.sleep(2)
 
 # ---------------------------------------------------------
-# 3. STREAMLIT UI (Web Interface)
+# 3. SIDEBAR UI (Settings)
 # ---------------------------------------------------------
-col_logo, col_title = st.columns([1, 4])
-
-with col_logo:
-    try:
-        st.image("icon.png", width=100)
-    except:
-        st.warning("⚠️ Upload icon.png to GitHub")
-
-with col_title:
-    st.title("NutriChef AI")
-    st.markdown("Your Personal AI Kitchen Assistant")
-
-# --- 🎯 CONTROLS SECTION ---
-col_opt1, col_opt2 = st.columns(2)
-
-with col_opt1:
+with st.sidebar:
+    st.header("⚙️ Chef's Settings")
     spiciness = st.select_slider(
         "🌶️ Spiciness Level",
         options=["Mild", "Medium", "Spicy", "Fire"]
     )
-
-with col_opt2:
+    
     dietary_goals = st.multiselect(
         "🎯 Dietary Goals",
         options=["High Protein", "Low Calorie", "Diabetic-Friendly", "Kid-Friendly", "Keto"],
         default=[]
     )
+    st.markdown("---")
+    st.info("Tip: Select 3-4 ingredients for the most creative recipes!")
+
+# ---------------------------------------------------------
+# 4. MAIN UI (Title & Ingredients)
+# ---------------------------------------------------------
+col_logo, col_title = st.columns([1, 6])
+
+with col_logo:
+    try:
+        st.image("icon.png", width=80)
+    except:
+        pass # Silently pass if icon isn't uploaded yet
+
+with col_title:
+    st.title("NutriChef AI")
+    st.markdown("Your Personal AI Kitchen Assistant")
 
 st.markdown("---")
-st.markdown("##### 🛒 Select Ingredients")
 
 fridge_inventory = [
     "Eggs", "Bread", "Milk",                    
     "Rice", "Lentils (Dal)", "Wheat Flour",     
     "Potatoes", "Onions", "Tomatoes",           
     "Spinach", "Green Peas", "Carrots",         
-    "Chicken", "Yogurt (Curd)", "Paneer/Cheese" 
+    "Chicken", "Yogurt (Curd)", "Paneer/Cheese",
+    "Garlic", "Ginger", "Olive Oil"
 ]
 
-col1, col2, col3 = st.columns(3)
-selected_items = []
-
-for index, item in enumerate(fridge_inventory):
-    if index % 3 == 0:
-        with col1:
-            if st.checkbox(item): selected_items.append(item)
-    elif index % 3 == 1:
-        with col2:
-            if st.checkbox(item): selected_items.append(item)
-    else:
-        with col3:
-            if st.checkbox(item): selected_items.append(item)
+# Modern Streamlit Pills for clean ingredient selection
+selected_items = st.pills(
+    "🛒 Select Available Ingredients (Click to toggle)", 
+    options=fridge_inventory, 
+    selection_mode="multi"
+)
 
 st.markdown("---")
 
 # ---------------------------------------------------------
-# 4. GENERATION LOGIC & HISTORY
+# 5. GENERATION LOGIC & HISTORY
 # ---------------------------------------------------------
-if st.button("Generate Recipe 🥘"):
-    if len(selected_items) > 0:
+# Center the generate button
+_, center_col, _ = st.columns([1, 2, 1])
+
+with center_col:
+    generate_btn = st.button("Generate Recipe 🥘", use_container_width=True)
+
+if generate_btn:
+    if selected_items and len(selected_items) > 0:
         status_msg = f'Cooking a {spiciness} meal'
         if dietary_goals: status_msg += f' that is {", ".join(dietary_goals)}'
         
         with st.spinner(f'{status_msg}...'):
             recipe_result = get_recipe(selected_items, spiciness, dietary_goals)
             
-            # Save to history (inserts at the beginning so newest is on top)
+            # Save to history if successful
             if not recipe_result.startswith("⚠️ Error"):
                 st.session_state.recipe_history.insert(0, recipe_result)
+                st.toast("Bon Appétit! Your recipe is ready. 🍳")
+                st.balloons() # Triggers the balloon animation
+            else:
+                st.error(recipe_result)
     else:
         st.warning("⚠️ Please select at least one ingredient.")
 
 # --- 📜 RECIPE HISTORY DISPLAY ---
 if st.session_state.recipe_history:
-    st.markdown("### 📜 Your Recipe History")
+    st.markdown("### 📜 Your Menu")
     
     for i, recipe in enumerate(st.session_state.recipe_history):
-        # Expanded=True only for the most recent recipe
+        # Only expand the newest recipe automatically
         with st.expander(f"Recipe #{len(st.session_state.recipe_history) - i}", expanded=(i == 0)):
             st.markdown(recipe)
+            
+            # Download button for each recipe
             st.download_button(
                 label=f"📥 Download Recipe #{len(st.session_state.recipe_history) - i}",
                 data=recipe,
                 file_name=f"NutriChef_Recipe_{len(st.session_state.recipe_history) - i}.txt",
                 mime="text/plain",
-                key=f"download_{i}" # Unique key required for dynamic buttons
+                key=f"download_{i}" 
             )
