@@ -3,9 +3,13 @@ from openai import OpenAI
 import time
 
 # ---------------------------------------------------------
-# 1. WEB CONFIGURATION
+# 1. WEB CONFIGURATION & STATE
 # ---------------------------------------------------------
 st.set_page_config(page_title="NutriChef AI", page_icon="icon.png")
+
+# Initialize Session State for Recipe History
+if "recipe_history" not in st.session_state:
+    st.session_state.recipe_history = []
 
 # SECURE AUTHENTICATION
 try:
@@ -21,7 +25,7 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1"
 )
 
-# Using Meta's lightning-fast Llama 3 model
+# Using Qwen on Groq's Free Tier
 REPO_ID = "qwen/qwen3.8-27b"
 
 # ---------------------------------------------------------
@@ -117,7 +121,7 @@ for index, item in enumerate(fridge_inventory):
 st.markdown("---")
 
 # ---------------------------------------------------------
-# 4. GENERATION LOGIC
+# 4. GENERATION LOGIC & HISTORY
 # ---------------------------------------------------------
 if st.button("Generate Recipe 🥘"):
     if len(selected_items) > 0:
@@ -127,16 +131,24 @@ if st.button("Generate Recipe 🥘"):
         with st.spinner(f'{status_msg}...'):
             recipe_result = get_recipe(selected_items, spiciness, dietary_goals)
             
-            st.markdown("### 🍽️ Your Recipe Card")
-            
-            with st.container(border=True):
-                st.markdown(recipe_result)
-            
-            st.download_button(
-                label="📥 Download Recipe (.txt)",
-                data=recipe_result,
-                file_name="NutriChef_Recipe.txt",
-                mime="text/plain"
-            )
+            # Save to history (inserts at the beginning so newest is on top)
+            if not recipe_result.startswith("⚠️ Error"):
+                st.session_state.recipe_history.insert(0, recipe_result)
     else:
         st.warning("⚠️ Please select at least one ingredient.")
+
+# --- 📜 RECIPE HISTORY DISPLAY ---
+if st.session_state.recipe_history:
+    st.markdown("### 📜 Your Recipe History")
+    
+    for i, recipe in enumerate(st.session_state.recipe_history):
+        # Expanded=True only for the most recent recipe
+        with st.expander(f"Recipe #{len(st.session_state.recipe_history) - i}", expanded=(i == 0)):
+            st.markdown(recipe)
+            st.download_button(
+                label=f"📥 Download Recipe #{len(st.session_state.recipe_history) - i}",
+                data=recipe,
+                file_name=f"NutriChef_Recipe_{len(st.session_state.recipe_history) - i}.txt",
+                mime="text/plain",
+                key=f"download_{i}" # Unique key required for dynamic buttons
+            )
