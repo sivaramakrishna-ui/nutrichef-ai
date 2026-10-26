@@ -138,7 +138,7 @@ with st.container(border=True):
         "Eggs 🥚", "Bread 🍞", "Milk 🥛", "Rice 🍚", "Pasta 🍝",
         "Lentils 🍲", "Beans 🫘", "Potatoes 🥔", "Onions 🧅", "Tomatoes 🍅", 
         "Spinach 🥬", "Carrots 🥕", "Bell Peppers 🫑", "Mushrooms 🍄",
-        "Chicken 🍗", "Beef 🥩", "Cheese 🧀", "Butter 🧈", 
+        "Chicken 🍗", "Cheese 🧀", "Butter 🧈", 
         "Garlic 🧄", "Ginger 🫚", "Olive Oil 🫒", "Soy Sauce 🥢"
     ]
     
