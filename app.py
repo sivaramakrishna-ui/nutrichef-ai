@@ -5,7 +5,7 @@ import time
 # ---------------------------------------------------------
 # 1. MOBILE-FIRST CONFIGURATION & CSS STYLING
 # ---------------------------------------------------------
-st.set_page_config(page_title="NutriChef", page_icon="🥘", layout="centered")
+st.set_page_config(page_title="NutriChef", page_icon="icon.png", layout="centered")
 
 # Inject Custom CSS for a vibrant, mobile-app feel
 st.markdown("""
@@ -102,10 +102,11 @@ def get_recipe(ingredients, spiciness_level, dietary_goals):
 # 3. MOBILE UI LAYOUT
 # ---------------------------------------------------------
 # App Header
-st.markdown("<h1>NutriChef AI 🥘</h1>", unsafe_allow_html=True)
+# App Header (No emoji)
+st.markdown("<h1>NutriChef AI</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Your pocket kitchen assistant</p>", unsafe_allow_html=True)
-# Center the icon
-_, icon_col, _ = st.columns([1, 2, 1])
+# Center the icon (Smaller size)
+_, icon_col, _ = st.columns([2, 1, 2])
 with icon_col:
     st.image("icon.png", use_container_width=True)
 
