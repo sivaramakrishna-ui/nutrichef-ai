@@ -3,11 +3,57 @@ from openai import OpenAI
 import time
 
 # ---------------------------------------------------------
-# 1. WEB CONFIGURATION & STATE
+# 1. MOBILE-FIRST CONFIGURATION & CSS STYLING
 # ---------------------------------------------------------
-st.set_page_config(page_title="NutriChef AI", page_icon="icon.png", layout="wide")
+st.set_page_config(page_title="NutriChef", page_icon="🥘", layout="centered")
 
-# Initialize Session State for Recipe History
+# Inject Custom CSS for a vibrant, mobile-app feel
+st.markdown("""
+<style>
+    /* Vibrant Gradient Title */
+    h1 {
+        background: -webkit-linear-gradient(45deg, #FF6B6B, #FF8E53);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-align: center;
+        font-size: 3rem !important;
+        font-weight: 800;
+        margin-bottom: 0;
+    }
+    
+    /* Massive, Colorful Gradient Main Button */
+    div.stButton > button:first-child {
+        background: linear-gradient(90deg, #FF6B6B 0%, #FF8E53 100%);
+        color: white;
+        border-radius: 30px;
+        border: none;
+        font-weight: bold;
+        font-size: 20px;
+        padding: 12px 24px;
+        box-shadow: 0px 8px 15px rgba(255, 107, 107, 0.4);
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    
+    div.stButton > button:first-child:hover {
+        transform: translateY(-2px);
+        box-shadow: 0px 12px 20px rgba(255, 107, 107, 0.6);
+    }
+    
+    /* Soften container backgrounds */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        border-radius: 20px;
+        border: 2px solid #FFE4E1;
+        background-color: #FFF9F9;
+        padding: 10px;
+    }
+    
+    /* Center text alignments */
+    .subtitle { text-align: center; color: #666; font-size: 1.1rem; margin-bottom: 20px; }
+</style>
+""", unsafe_allow_html=True)
+
+# Initialize Session State
 if "recipe_history" not in st.session_state:
     st.session_state.recipe_history = []
 
@@ -15,25 +61,17 @@ if "recipe_history" not in st.session_state:
 try:
     GROQ_TOKEN = st.secrets["GROQ_API_KEY"]
 except:
-    st.error("⚠️ Token not found!")
-    st.info("Go to Streamlit Cloud -> App Settings -> Secrets and add: GROQ_API_KEY = 'gsk_...'")
+    st.error("⚠️ Token not found in secrets!")
     st.stop()
 
-# Initialize Groq Client 
-client = OpenAI(
-    api_key=GROQ_TOKEN,
-    base_url="https://api.groq.com/openai/v1"
-)
-
-# Using Qwen on Groq's Free Tier
+client = OpenAI(api_key=GROQ_TOKEN, base_url="https://api.groq.com/openai/v1")
 REPO_ID = "qwen/qwen3.8-27b"
 
 # ---------------------------------------------------------
-# 2. HELPER FUNCTIONS
+# 2. AI GENERATION FUNCTION
 # ---------------------------------------------------------
 def get_recipe(ingredients, spiciness_level, dietary_goals):
     goals_str = ", ".join(dietary_goals) if dietary_goals else "None"
-    
     system_prompt = f"""
     You are NutriChef AI.
     1. Create a recipe using ONLY the selected ingredients.
@@ -42,9 +80,7 @@ def get_recipe(ingredients, spiciness_level, dietary_goals):
     4. START with the Recipe Name as a # Header.
     5. Create a Markdown Table for estimated nutrition.
     """
-    
-    ingredients_str = ", ".join(ingredients)
-    user_prompt = f"Ingredients: {ingredients_str}. Goals: {goals_str}. Spiciness: {spiciness_level}."
+    user_prompt = f"Ingredients: {','.join(ingredients)}. Goals: {goals_str}. Spiciness: {spiciness_level}."
 
     for attempt in range(3):
         try:
@@ -63,99 +99,78 @@ def get_recipe(ingredients, spiciness_level, dietary_goals):
             time.sleep(2)
 
 # ---------------------------------------------------------
-# 3. SIDEBAR UI (Settings)
+# 3. MOBILE UI LAYOUT
 # ---------------------------------------------------------
-with st.sidebar:
-    st.header("⚙️ Chef's Settings")
+# App Header
+st.markdown("<h1>NutriChef AI 🥘</h1>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Your pocket kitchen assistant</p>", unsafe_allow_html=True)
+
+# 📱 Settings - Moved to main page inside a colorful container for mobile
+with st.container(border=True):
+    st.markdown("### 🎛️ Recipe Settings")
     spiciness = st.select_slider(
-        "🌶️ Spiciness Level",
-        options=["Mild", "Medium", "Spicy", "Fire"]
+        "🌶️ Spiciness",
+        options=["Mild", "Medium", "Spicy", "Fire"],
+        value="Medium"
     )
-    
     dietary_goals = st.multiselect(
         "🎯 Dietary Goals",
-        options=["High Protein", "Low Calorie", "Diabetic-Friendly", "Kid-Friendly", "Keto"],
-        default=[]
+        options=["High Protein", "Low Calorie", "Diabetic-Friendly", "Keto"],
+        placeholder="Tap to select..."
     )
-    st.markdown("---")
-    st.info("Tip: Select 3-4 ingredients for the most creative recipes!")
+
+st.write("") # Spacer
+
+# 📱 Ingredients - Using pills for easy thumb-tapping
+with st.container(border=True):
+    st.markdown("### 🛒 Pantry Ingredients")
+    fridge_inventory = [
+        "Eggs 🥚", "Bread 🍞", "Milk 🥛", "Rice 🍚", 
+        "Lentils 🍲", "Potatoes 🥔", "Onions 🧅", "Tomatoes 🍅", 
+        "Spinach 🥬", "Carrots 🥕", "Chicken 🍗", "Cheese 🧀", 
+        "Garlic 🧄", "Olive Oil 🫒"
+    ]
+    
+    selected_items = st.pills(
+        "Tap to add to pot:", 
+        options=fridge_inventory, 
+        selection_mode="multi"
+    )
+
+st.write("") # Spacer
 
 # ---------------------------------------------------------
-# 4. MAIN UI (Title & Ingredients)
+# 4. ACTION BUTTON & RESULTS
 # ---------------------------------------------------------
-col_logo, col_title = st.columns([1, 6])
-
-with col_logo:
-    try:
-        st.image("icon.png", width=80)
-    except:
-        pass # Silently pass if icon isn't uploaded yet
-
-with col_title:
-    st.title("NutriChef AI")
-    st.markdown("Your Personal AI Kitchen Assistant")
-
-st.markdown("---")
-
-fridge_inventory = [
-    "Eggs", "Bread", "Milk",                    
-    "Rice", "Lentils (Dal)", "Wheat Flour",     
-    "Potatoes", "Onions", "Tomatoes",           
-    "Spinach", "Green Peas", "Carrots",         
-    "Chicken", "Yogurt (Curd)", "Paneer/Cheese",
-    "Garlic", "Ginger", "Olive Oil"
-]
-
-# Modern Streamlit Pills for clean ingredient selection
-selected_items = st.pills(
-    "🛒 Select Available Ingredients (Click to toggle)", 
-    options=fridge_inventory, 
-    selection_mode="multi"
-)
-
-st.markdown("---")
-
-# ---------------------------------------------------------
-# 5. GENERATION LOGIC & HISTORY
-# ---------------------------------------------------------
-# Center the generate button
-_, center_col, _ = st.columns([1, 2, 1])
-
-with center_col:
-    generate_btn = st.button("Generate Recipe 🥘", use_container_width=True)
-
-if generate_btn:
+if st.button("Cook Now! ✨"):
     if selected_items and len(selected_items) > 0:
-        status_msg = f'Cooking a {spiciness} meal'
-        if dietary_goals: status_msg += f' that is {", ".join(dietary_goals)}'
-        
-        with st.spinner(f'{status_msg}...'):
+        with st.spinner("🔥 Chef is cooking your recipe..."):
             recipe_result = get_recipe(selected_items, spiciness, dietary_goals)
             
-            # Save to history if successful
             if not recipe_result.startswith("⚠️ Error"):
                 st.session_state.recipe_history.insert(0, recipe_result)
-                st.toast("Bon Appétit! Your recipe is ready. 🍳")
-                st.balloons() # Triggers the balloon animation
+                st.toast("Bon Appétit! 🍽️")
+                st.balloons()
             else:
                 st.error(recipe_result)
     else:
-        st.warning("⚠️ Please select at least one ingredient.")
+        st.warning("⚠️ Tap at least one ingredient first!")
 
-# --- 📜 RECIPE HISTORY DISPLAY ---
+# 📜 History displayed as mobile "Cards"
 if st.session_state.recipe_history:
-    st.markdown("### 📜 Your Menu")
+    st.markdown("---")
+    st.markdown("### 🍽️ Your Menu")
     
     for i, recipe in enumerate(st.session_state.recipe_history):
-        # Only expand the newest recipe automatically
-        with st.expander(f"Recipe #{len(st.session_state.recipe_history) - i}", expanded=(i == 0)):
-            st.markdown(recipe)
-            
-            # Download button for each recipe
-            st.download_button(
-                label=f"📥 Download Recipe #{len(st.session_state.recipe_history) - i}",
-                data=recipe,
-                file_name=f"NutriChef_Recipe_{len(st.session_state.recipe_history) - i}.txt",
-                mime="text/plain",
-                key=f"download_{i}" 
-            )
+        # Use success/info containers to make the recipe look like a distinct card
+        with st.container(border=True):
+            with st.expander(f"✨ Recipe #{len(st.session_state.recipe_history) - i}", expanded=(i == 0)):
+                st.markdown(recipe)
+                st.download_button(
+                    label="💾 Save Recipe",
+                    data=recipe,
+                    file_name=f"NutriChef_Recipe_{i}.txt",
+                    mime="text/plain",
+                    key=f"dl_{i}",
+                    use_container_width=True
+                )
