@@ -101,7 +101,7 @@ def get_recipe(ingredients, spiciness_level, dietary_goals):
 # ---------------------------------------------------------
 # 3. MOBILE UI LAYOUT
 # ---------------------------------------------------------
-# App Header (No emoji)
+# App Header
 st.markdown("<h1>NutriChef AI</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Your pocket kitchen assistant</p>", unsafe_allow_html=True)
 
@@ -133,17 +133,15 @@ st.write("") # Spacer
 with st.container(border=True):
     st.markdown("### 🛒 Pantry Ingredients")
     
-    # Expanded Inventory
     fridge_inventory = [
         "Eggs 🥚", "Bread 🍞", "Milk 🥛", "Rice 🍚", "Pasta 🍝",
         "Lentils 🍲", "Beans 🫘", "Potatoes 🥔", "Onions 🧅", "Tomatoes 🍅", 
         "Spinach 🥬", "Carrots 🥕", "Bell Peppers 🫑", "Mushrooms 🍄",
-        "Chicken 🍗", "Cheese 🧀", "Butter 🧈", 
-        "Garlic 🧄", "Ginger 🫚", "Olive Oil 🫒", "Soy Sauce 🥢"
+        "Chicken 🍗", "Cheese 🧀", "Butter 🧈", "Garlic 🧄"
     ]
     
     selected_items = st.pills(
-        "Tap to add to pot:", 
+        "Tap main ingredients:", 
         options=fridge_inventory, 
         selection_mode="multi",
         default=[]
@@ -151,10 +149,18 @@ with st.container(border=True):
     
     st.markdown("---")
     
-    # Custom Ingredient Input
-    custom_ingredients = st.text_input(
-        "➕ Have something else?",
-        placeholder="e.g. honey, salmon, lemon... (comma separated)"
+    # ⬇️ NEW: Dropdown Menu for Extras ⬇️
+    extra_options = [
+        "Honey 🍯", "Lemon 🍋", "Lime 🍈", "Vinegar 🍾", 
+        "Soy Sauce 🥢", "Cinnamon 🤎", "Vanilla Extract 🌼", 
+        "Sugar 🧂", "Salt & Pepper 🧂", "Chili Flakes 🌶️",
+        "Mayonnaise 🥚", "Ketchup 🍅", "Mustard 🌭"
+    ]
+    
+    extra_ingredients = st.multiselect(
+        "➕ Add Flavor & Extras",
+        options=extra_options,
+        placeholder="Tap to view dropdown menu..."
     )
 
 st.write("") # Spacer
@@ -164,13 +170,10 @@ st.write("") # Spacer
 # ---------------------------------------------------------
 if st.button("Cook Now! ✨"):
     
-    # Combine selected pills and typed custom ingredients
+    # Combine selected pills and dropdown extras
     final_ingredients = list(selected_items) if selected_items else []
-    
-    if custom_ingredients:
-        # Split by comma and remove extra spaces
-        custom_list = [item.strip() for item in custom_ingredients.split(",") if item.strip()]
-        final_ingredients.extend(custom_list)
+    if extra_ingredients:
+        final_ingredients.extend(extra_ingredients)
         
     if len(final_ingredients) > 0:
         with st.spinner("🔥 Chef is cooking your recipe..."):
@@ -183,7 +186,7 @@ if st.button("Cook Now! ✨"):
             else:
                 st.error(recipe_result)
     else:
-        st.warning("⚠️ Tap or type at least one ingredient first!")
+        st.warning("⚠️ Tap at least one ingredient first!")
 
 # 📜 History displayed as mobile "Cards"
 if st.session_state.recipe_history:
