@@ -126,13 +126,24 @@ with st.container(border=True):
         value="Medium"
     )
     
+    # ⬇️ NEW: Expanded Dietary Goals (10 Options) ⬇️
     dietary_goals = st.multiselect(
         "🎯 Dietary Goals",
-        options=["High Protein", "Low Calorie", "Diabetic-Friendly", "Keto"],
+        options=[
+            "High Protein 💪", 
+            "Low Calorie 📉", 
+            "Low Carb 🚫🍞", 
+            "Keto 🥑", 
+            "Vegan 🌱", 
+            "Vegetarian 🥗", 
+            "Gluten-Free 🌾", 
+            "Dairy-Free 🥛", 
+            "Diabetic-Friendly 🩸", 
+            "Heart-Healthy ❤️"
+        ],
         placeholder="Tap to select..."
     )
 
-    # ⬇️ Moved to the bottom of the settings container ⬇️
     max_time = st.selectbox(
         "⏱️ Max Cooking Time",
         options=["15 mins ⚡", "30 mins ⏳", "45 mins 🕒", "1 hour 🍳", "Any Time 🕰️"],
@@ -181,7 +192,6 @@ st.write("") # Spacer
 # ---------------------------------------------------------
 if st.button("Cook Now! ✨"):
     
-    # Combine selected pills and dropdown extras
     final_ingredients = list(selected_items) if selected_items else []
     if extra_ingredients:
         final_ingredients.extend(extra_ingredients)
