@@ -73,7 +73,6 @@ REPO_ID = "qwen/qwen3.8-27b"
 def get_recipe(ingredients, spiciness_level, dietary_goals, max_time):
     goals_str = ", ".join(dietary_goals) if dietary_goals else "None"
     
-    # ⬇️ NEW: Added Max Time to the System Prompt
     system_prompt = f"""
     You are NutriChef AI.
     1. Create a recipe using ONLY the selected ingredients.
@@ -121,13 +120,6 @@ with icon_col:
 with st.container(border=True):
     st.markdown("### 🎛️ Recipe Settings")
     
-    # ⬇️ NEW: Cooking Duration Dropdown ⬇️
-    max_time = st.selectbox(
-        "⏱️ Max Cooking Time",
-        options=["15 mins ⚡", "30 mins ⏳", "45 mins 🕒", "1 hour 🍳", "Any Time 🕰️"],
-        index=1 # Defaults to 30 mins
-    )
-    
     spiciness = st.select_slider(
         "🌶️ Spiciness",
         options=["Mild", "Medium", "Spicy", "Fire"],
@@ -138,6 +130,13 @@ with st.container(border=True):
         "🎯 Dietary Goals",
         options=["High Protein", "Low Calorie", "Diabetic-Friendly", "Keto"],
         placeholder="Tap to select..."
+    )
+
+    # ⬇️ Moved to the bottom of the settings container ⬇️
+    max_time = st.selectbox(
+        "⏱️ Max Cooking Time",
+        options=["15 mins ⚡", "30 mins ⏳", "45 mins 🕒", "1 hour 🍳", "Any Time 🕰️"],
+        index=1 
     )
 
 st.write("") # Spacer
@@ -189,7 +188,6 @@ if st.button("Cook Now! ✨"):
         
     if len(final_ingredients) > 0:
         with st.spinner(f"🔥 Cooking a {max_time.split()[0]} minute recipe..."):
-            # ⬇️ NEW: Pass max_time into the get_recipe function
             recipe_result = get_recipe(final_ingredients, spiciness, dietary_goals, max_time)
             
             if not recipe_result.startswith("⚠️ Error"):
