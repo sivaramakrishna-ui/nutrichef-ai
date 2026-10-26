@@ -106,7 +106,7 @@ def get_recipe(ingredients, spiciness_level, dietary_goals, max_time):
 # ---------------------------------------------------------
 # App Header
 st.markdown("<h1>NutriChef AI</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitle'>Your pocket kitchen assistant</p>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Your Smart Kitchen Assistant</p>", unsafe_allow_html=True)
 
 # Center the icon
 _, icon_col, _ = st.columns([2, 1, 2])
